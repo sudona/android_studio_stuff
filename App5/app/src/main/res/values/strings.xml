@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">App5</string>
+    <string name="name">Name</string>
+    <string name="year">Year</string>
+    <string name="type">Type</string>
+    <string name="actors">Actors</string>
+</resources>

@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">App2</string>
+    <string name="access_bluetooth">Access Bluetooth</string>
+    <string name="access_calender">Access Calender</string>
+    <string name="access_camera">Access Camera</string>
+</resources>

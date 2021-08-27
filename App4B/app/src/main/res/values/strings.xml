@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">App4B</string>
+    <string name="get_picture">Get Picture</string>
+    <string name="image_of_something">Image of Something</string>
+</resources>

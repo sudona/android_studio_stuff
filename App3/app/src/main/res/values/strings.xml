@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">App3</string>
+    <string name="server_client_id">444369476837-eb402ri4onru7ng1nff3denbu12hipnu.apps.googleusercontent.com</string>
+    <string name="sign_out">Sign Out</string>
+</resources>
