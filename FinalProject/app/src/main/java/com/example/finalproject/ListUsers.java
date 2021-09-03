@@ -1,6 +1,7 @@
 package com.example.finalproject;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,5 +24,12 @@ public class ListUsers {
 
     public List<Map<String, String>> getUserList() {
         return userList;
+    }
+
+    public void replaceUserList(List<Map<String,String>> users) {
+        userList.clear();
+        for (Map<String, String> user : users){
+            userList.add(new LinkedHashMap<>(user));
+        }
     }
 }

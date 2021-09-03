@@ -12,6 +12,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.PersistableBundle;
@@ -28,9 +29,14 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import okhttp3.Call;
@@ -60,6 +66,14 @@ public class ListAccount extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        client = new OkHttpClient();
+        gson = new Gson();
+        random = new Random();
+
+        if (listUsers.getUserList().size() == 0) {
+            getData();
+        }
+
         changedActivities = false;
         Display display = ((WindowManager) this.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
         display_rotation = display.getRotation();
@@ -75,9 +89,6 @@ public class ListAccount extends AppCompatActivity {
         if (account == null) {
             swapToMainActivity();
         }
-        client = new OkHttpClient();
-        gson = new Gson();
-        random = new Random();
         recyclerUsers = findViewById(R.id.list_users);
 
         signOutButton = findViewById(R.id.sign_out_button);
@@ -91,7 +102,7 @@ public class ListAccount extends AppCompatActivity {
 
         if (getIntent().getBooleanExtra("fromInfoPage", false)) {
             UserListAdapter cardAdapter = new UserListAdapter(listUsers.getUserList(), () -> {
-                changedActivities = false;
+                changedActivities = true;
             });
             recyclerUsers.setAdapter(cardAdapter);
             recyclerUsers.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
@@ -193,8 +204,11 @@ public class ListAccount extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         Display display = ((WindowManager) this.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+        setData();
         if (!changedActivities && display.getRotation() == display_rotation) {
             createNotification();
+        } else {
+            changedActivities = false;
         }
     }
 
@@ -205,5 +219,23 @@ public class ListAccount extends AppCompatActivity {
         intent.putExtra("fromListAccount", true);
         startActivity(intent);
         super.onBackPressed();
+    }
+
+
+    private void setData() {
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        Type type = new TypeToken<ArrayList<LinkedHashMap<String, String>>>(){}.getType();
+        String userListJson = gson.toJson(listUsers.getUserList(), type);
+        editor.putString("userList", userListJson);
+        editor.apply();
+        return;
+    }
+
+    private void getData() {
+        Type type = new TypeToken<ArrayList<LinkedHashMap<String, String>>>(){}.getType();
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        List<Map<String, String>> users = gson.fromJson(sharedPref.getString("userList", ""), type);
+        listUsers.replaceUserList(users);
     }
 }

@@ -15,6 +15,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Picture;
 import android.media.Image;
@@ -29,9 +30,13 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.squareup.picasso.Picasso;
 
 import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,11 +51,14 @@ public class UserInfoPage extends AppCompatActivity {
     private NotificationManagerCompat notificationManagerCompat;
     private boolean wentBack;
     private int display_rotation;
+    int position;
+    private Gson gson;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_info_page);
+        gson = new Gson();
 
         wentBack = false;
         Display display = ((WindowManager) this.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
@@ -59,33 +67,36 @@ public class UserInfoPage extends AppCompatActivity {
         imageUser = findViewById(R.id.image_user_page);
         infoUserView = findViewById(R.id.info_user_page);
 
-        int position = getIntent().getIntExtra("position", -1);
-        user = userList.getUserList().get(position);
+        if (userList.getUserList().size() == 0) {
+            getData();
+        }
+        position = getIntent().getIntExtra("position", -1);
 
         if (position != -1){
+            user = userList.getUserList().get(position);
             UserPageAdapter cardAdapter = new UserPageAdapter((LinkedHashMap<String, String>) userList.getUserList().get(position));
             infoUserView.setAdapter(cardAdapter);
             infoUserView.setLayoutManager(new LinearLayoutManager(this));
+
+            Picasso.with(this).load(user.get("Image")).into(imageUser);
+            imageUser.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(UserInfoPage.this);
+                    builder.setMessage("Do you want to take a new photo?").setTitle("Picture")
+                            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    wentBack = true;
+                                    Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                                    startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+                                }
+                            })
+                            .setNegativeButton("No", null);
+                    builder.create().show();
+                }
+            });
         }
-
-        Picasso.with(this).load(user.get("Image")).into(imageUser);
-        imageUser.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(UserInfoPage.this);
-                builder.setMessage("Do you want to take a new photo?").setTitle("Picture")
-                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
-                            }
-                        })
-                        .setNegativeButton("No", null);
-                builder.create().show();
-            }
-        });
-
         createNotificationChannel(NotificationManager.IMPORTANCE_HIGH);
         notificationManagerCompat = NotificationManagerCompat.from(getApplicationContext());
     }
@@ -131,7 +142,9 @@ public class UserInfoPage extends AppCompatActivity {
         notificationIntent.addCategory(Intent. CATEGORY_LAUNCHER ) ;
         notificationIntent.setAction(Intent. ACTION_MAIN ) ;
         notificationIntent.setFlags(Intent. FLAG_ACTIVITY_CLEAR_TOP | Intent. FLAG_ACTIVITY_SINGLE_TOP );
-        PendingIntent pendingIntent = PendingIntent. getActivity (this, 0 , notificationIntent , 0 ) ;
+        notificationIntent.putExtra("position", position);
+        PendingIntent pendingIntent = PendingIntent. getActivity (this, 0 ,
+                notificationIntent , PendingIntent.FLAG_UPDATE_CURRENT) ;
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
@@ -146,8 +159,26 @@ public class UserInfoPage extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         Display display = ((WindowManager) this.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+        setData();
         if (!wentBack && display.getRotation() == display_rotation) {
             createNotification();
+        } else {
+            wentBack = false;
         }
+    }
+
+    private void setData() {
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        Type type = new TypeToken<ArrayList<LinkedHashMap<String, String>>>(){}.getType();
+        String userListJson = gson.toJson(userList.getUserList(), type);
+        editor.putString("userList", userListJson);
+        editor.apply();
+    }
+
+    private void getData() {
+        Type type = new TypeToken<ArrayList<LinkedHashMap<String, String>>>(){}.getType();
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        userList.replaceUserList(gson.fromJson(sharedPref.getString("userList", ""), type));
     }
 }

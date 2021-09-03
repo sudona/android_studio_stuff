@@ -72,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void signIn() {
         Intent signInIntent = googleSignInClient.getSignInIntent();
+        wentBack = true;
         startActivityForResult(signInIntent, SIGN_IN_CODE);
     }
 
@@ -122,12 +123,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 put("Name", account.getDisplayName());
                 put("Email", account.getEmail());
+                put("Website", "");
+                put("Street", "");
             }});
             startActivity(intent);
         } else {
-            Toast toast = new Toast(this);
-            toast.setText("Please Sign In!");
-            toast.setDuration(Toast.LENGTH_LONG);
+            Toast toast = Toast.makeText(this, "Please Sign In!", Toast.LENGTH_LONG);
             toast.show();
         }
     }
@@ -149,6 +150,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onStop();
         if (!wentBack) {
             createNotification();
+        } else {
+            wentBack = false;
         }
     }
 
