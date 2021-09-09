@@ -105,7 +105,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onStart() {
         super.onStart();
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
-        switchTo(account);
+        if (account != null) {
+            switchTo(account);
+        }
     }
 
     public void switchTo(GoogleSignInAccount account) {
