@@ -144,7 +144,7 @@ public class UserInfoPage extends AppCompatActivity {
         notificationIntent.setFlags(Intent. FLAG_ACTIVITY_CLEAR_TOP | Intent. FLAG_ACTIVITY_SINGLE_TOP );
         notificationIntent.putExtra("position", position);
         PendingIntent pendingIntent = PendingIntent. getActivity (this, 0 ,
-                notificationIntent , PendingIntent.FLAG_UPDATE_CURRENT) ;
+                notificationIntent , PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE) ;
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
