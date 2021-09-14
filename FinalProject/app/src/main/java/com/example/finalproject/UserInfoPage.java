@@ -136,7 +136,7 @@ public class UserInfoPage extends AppCompatActivity {
         Display display = ((WindowManager) this.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
         Utility.setData(this);
         if (!wentBack && display.getRotation() == display_rotation) {
-            Utility.createNotification(this, UserInfoPage.class, notificationManagerCompat);
+            Utility.createNotification(this, UserInfoPage.class, notificationManagerCompat, new HashMap<String, Object>() {{put("position", 1);}});
         } else {
             wentBack = false;
             display_rotation = display.getRotation();
