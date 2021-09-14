@@ -20,7 +20,6 @@ import java.util.Set;
 public class UserPageAdapter extends RecyclerView.Adapter<UserPageAdapter.ViewHolder> {
     LinkedHashMap<String, String> userRef;
     List<String> list_string;
-    
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         EditText userInfo;

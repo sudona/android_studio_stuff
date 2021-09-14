@@ -57,7 +57,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         signInButton.setSize(SignInButton.SIZE_STANDARD);
         signInButton.setOnClickListener(this);
 
-        createNotificationChannel(NotificationManager.IMPORTANCE_HIGH);
+        Utility.createNotificationChannel(this, NotificationManager.IMPORTANCE_HIGH);
         notificationManagerCompat = NotificationManagerCompat.from(getApplicationContext());
     }
 
@@ -135,41 +135,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    private void createNotificationChannel(int importance_level) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = getString(R.string.channel_name);
-            String description = getString(R.string.channel_description);
-            int importance = importance_level;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
-        }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Utility.removeNotification(notificationManagerCompat);
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
+    protected void onPause() {
+        super.onPause();
         if (!wentBack) {
-            createNotification();
+            Utility.createNotification(this, MainActivity.class, notificationManagerCompat);
         } else {
             wentBack = false;
         }
-    }
-
-    private void createNotification() {
-        Intent notificationIntent = new Intent(this, MainActivity.class );
-        notificationIntent.addCategory(Intent. CATEGORY_LAUNCHER ) ;
-        notificationIntent.setAction(Intent. ACTION_MAIN ) ;
-        notificationIntent.setFlags(Intent. FLAG_ACTIVITY_CLEAR_TOP | Intent. FLAG_ACTIVITY_SINGLE_TOP );
-        PendingIntent pendingIntent = PendingIntent. getActivity (this, 0 , notificationIntent , PendingIntent.FLAG_IMMUTABLE ) ;
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentTitle("Final Project")
-                .setContentText("don't forget about me")
-                .setContentIntent(pendingIntent)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-        notificationManagerCompat.notify(0, builder.build());
     }
 }

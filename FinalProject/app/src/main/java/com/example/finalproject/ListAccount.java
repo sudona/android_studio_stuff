@@ -48,7 +48,6 @@ import okhttp3.ResponseBody;
 
 public class ListAccount extends AppCompatActivity {
 
-    private static final String CHANNEL_ID = "FINAL_PROJ_CHANNEL";
     private ListUsers listUsers = ListUsers.getInstance();
     private final static String url_const = "http://jsonplaceholder.typicode.com/users",
             TAG = "LISTACCOUNT",
@@ -71,7 +70,7 @@ public class ListAccount extends AppCompatActivity {
         random = new Random();
 
         if (listUsers.getUserList().size() == 0) {
-            getData();
+            Utility.getData(this);
         }
 
         changedActivities = false;
@@ -109,8 +108,13 @@ public class ListAccount extends AppCompatActivity {
         } else {
             addHTTPtoUserList();
         }
-        createNotificationChannel(NotificationManager.IMPORTANCE_HIGH);
+        Utility.createNotificationChannel(this, NotificationManager.IMPORTANCE_HIGH);
         notificationManagerCompat = NotificationManagerCompat.from(getApplicationContext());
+    }
+
+    public void onResume() {
+        super.onResume();
+        Utility.removeNotification(notificationManagerCompat);
     }
 
     private void signOut() {
@@ -172,43 +176,16 @@ public class ListAccount extends AppCompatActivity {
         }
     }
 
-    private void createNotificationChannel(int importance_level) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = getString(R.string.channel_name);
-            String description = getString(R.string.channel_description);
-            int importance = importance_level;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
-        }
-    }
-
-    private void createNotification() {
-        Intent notificationIntent = new Intent(this, ListAccount.class );
-        notificationIntent.addCategory(Intent. CATEGORY_LAUNCHER ) ;
-        notificationIntent.setAction(Intent. ACTION_MAIN ) ;
-        notificationIntent.setFlags(Intent. FLAG_ACTIVITY_CLEAR_TOP | Intent. FLAG_ACTIVITY_SINGLE_TOP );
-        PendingIntent pendingIntent = PendingIntent. getActivity (this, 0 , notificationIntent , PendingIntent.FLAG_IMMUTABLE ) ;
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentTitle("Final Project")
-                .setContentText("don't forget about me")
-                .setContentIntent(pendingIntent)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-        notificationManagerCompat.notify(0, builder.build());
-    }
-
     @Override
-    protected void onStop() {
-        super.onStop();
+    protected void onPause() {
+        super.onPause();
         Display display = ((WindowManager) this.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-        setData();
+        Utility.setData(this);
         if (!changedActivities && display.getRotation() == display_rotation) {
-            createNotification();
+            Utility.createNotification(this, ListAccount.class, notificationManagerCompat);
         } else {
             changedActivities = false;
+            display_rotation = display.getRotation();
         }
     }
 
@@ -218,24 +195,8 @@ public class ListAccount extends AppCompatActivity {
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra("fromListAccount", true);
         startActivity(intent);
+        finish();
         super.onBackPressed();
     }
 
-
-    private void setData() {
-        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        Type type = new TypeToken<ArrayList<LinkedHashMap<String, String>>>(){}.getType();
-        String userListJson = gson.toJson(listUsers.getUserList(), type);
-        editor.putString("userList", userListJson);
-        editor.apply();
-        return;
-    }
-
-    private void getData() {
-        Type type = new TypeToken<ArrayList<LinkedHashMap<String, String>>>(){}.getType();
-        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
-        List<Map<String, String>> users = gson.fromJson(sharedPref.getString("userList", ""), type);
-        listUsers.replaceUserList(users);
-    }
 }
