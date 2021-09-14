@@ -65,9 +65,14 @@ public class Utility {
         notificationIntent.setAction(Intent. ACTION_MAIN ) ;
         notificationIntent.setFlags(Intent. FLAG_ACTIVITY_CLEAR_TOP | Intent. FLAG_ACTIVITY_SINGLE_TOP );
         for (Map.Entry<String, Object> entry : extraData.entrySet()) {
-            notificationIntent.putExtra(entry.getKey(), entry.getValue());
+            if (entry.getValue() instanceof Integer) {
+                notificationIntent.putExtra(entry.getKey(), (int)entry.getValue());
+            }
+            else if (entry.getValue() instanceof String) {
+                notificationIntent.putExtra(entry.getKey(), (String)entry.getValue());
+            }
         }
-        PendingIntent pendingIntent = PendingIntent. getActivity (context, 0 , notificationIntent , PendingIntent.FLAG_IMMUTABLE ) ;
+        PendingIntent pendingIntent = PendingIntent. getActivity (context, 0 , notificationIntent , PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE ) ;
 
         String channelId = context.getString(R.string.channel_id);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channelId)
