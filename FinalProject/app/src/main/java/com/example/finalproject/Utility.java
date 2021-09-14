@@ -58,6 +58,27 @@ public class Utility {
                 .setAutoCancel(true);
         notificationManagerCompat.notify(notificationId, builder.build());
     }
+    
+    public static void createNotification(Context context, Class user_class, NotificationManagerCompat notificationManagerCompat, Map<String, Object> extraData) {
+        Intent notificationIntent = new Intent(context, user_class);
+        notificationIntent.addCategory(Intent. CATEGORY_LAUNCHER ) ;
+        notificationIntent.setAction(Intent. ACTION_MAIN ) ;
+        notificationIntent.setFlags(Intent. FLAG_ACTIVITY_CLEAR_TOP | Intent. FLAG_ACTIVITY_SINGLE_TOP );
+        for (Map.Entry<String, Object> entry : extraData.entrySet()) {
+            notificationIntent.putExtra(entry.getKey(), entry.getValue());
+        }
+        PendingIntent pendingIntent = PendingIntent. getActivity (context, 0 , notificationIntent , PendingIntent.FLAG_IMMUTABLE ) ;
+
+        String channelId = context.getString(R.string.channel_id);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channelId)
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentTitle("Final Project")
+                .setContentText("don't forget about me")
+                .setContentIntent(pendingIntent)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setAutoCancel(true);
+        notificationManagerCompat.notify(notificationId, builder.build());
+    }
 
     public static void setData(Context context) {
         SharedPreferences sharedPref = context.getSharedPreferences(prefName, Context.MODE_PRIVATE);
