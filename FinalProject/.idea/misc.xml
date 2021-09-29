@@ -4,13 +4,18 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="..\:/Android/AndroidStudioProjects/FinalProject/app/src/main/res/layout/activity_card_user_layout.xml" value="0.28940217391304346" />
+        <entry key="..\:/Android/AndroidStudioProjects/FinalProject/app/src/main/res/layout/activity_file_upload.xml" value="0.35260416666666666" />
+        <entry key="..\:/Android/AndroidStudioProjects/FinalProject/app/src/main/res/layout/activity_image_viewer.xml" value="0.36367753623188404" />
         <entry key="..\:/Android/AndroidStudioProjects/FinalProject/app/src/main/res/layout/activity_layout_recycler.xml" value="0.2957427536231884" />
         <entry key="..\:/Android/AndroidStudioProjects/FinalProject/app/src/main/res/layout/activity_list_account.xml" value="0.2957427536231884" />
         <entry key="..\:/Android/AndroidStudioProjects/FinalProject/app/src/main/res/layout/activity_main.xml" value="0.2957427536231884" />
+        <entry key="..\:/Android/AndroidStudioProjects/FinalProject/app/src/main/res/layout/activity_maps_user.xml" value="0.20520833333333333" />
         <entry key="..\:/Android/AndroidStudioProjects/FinalProject/app/src/main/res/layout/activity_user_info_page.xml" value="0.28940217391304346" />
         <entry key="..\:/Android/AndroidStudioProjects/FinalProject/app/src/main/res/layout/content_layout_recycler.xml" value="0.20520833333333333" />
         <entry key="..\:/Android/AndroidStudioProjects/FinalProject/app/src/main/res/layout/fragment_first.xml" value="0.2957427536231884" />
         <entry key="..\:/Android/AndroidStudioProjects/FinalProject/app/src/main/res/layout/fragment_second.xml" value="0.2957427536231884" />
+        <entry key="..\:/Android/AndroidStudioProjects/FinalProject/app/src/main/res/menu/menu.xml" value="0.36666666666666664" />
+        <entry key="..\:/Android/AndroidStudioProjects/FinalProject/app/src/main/res/menu/user_menu.xml" value="0.17083333333333334" />
       </map>
     </option>
   </component>

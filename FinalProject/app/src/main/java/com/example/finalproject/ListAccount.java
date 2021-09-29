@@ -1,27 +1,33 @@
 package com.example.finalproject;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.os.Build;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
-import android.os.PersistableBundle;
 import android.util.Log;
 import android.view.Display;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.finalproject.adapters.UserListAdapter;
+import com.example.finalproject.database.RoomDB;
+import com.example.finalproject.user.User;
+import com.example.finalproject.utils.ClassHolder;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -29,14 +35,11 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
 import okhttp3.Call;
@@ -48,19 +51,18 @@ import okhttp3.ResponseBody;
 
 public class ListAccount extends AppCompatActivity {
 
-    private ListUsers listUsers = ListUsers.getInstance();
     private final static String url_const = "http://jsonplaceholder.typicode.com/users",
             TAG = "LISTACCOUNT",
             robo_hash = "https://robohash.org/";
+    private static final int PERMISSION_STORAGE = 11, SELECT_PHOTO = 12;
     private RecyclerView recyclerUsers;
     private Button signOutButton;
     private GoogleSignInClient googleSignInClient;
     private Random random;
     private OkHttpClient client;
     private Gson gson;
-    private NotificationManagerCompat notificationManagerCompat;
-    private boolean changedActivities;
-    private int display_rotation;
+    private RoomDB database;
+    private final ClassHolder classHolder = ClassHolder.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,13 +71,9 @@ public class ListAccount extends AppCompatActivity {
         gson = new Gson();
         random = new Random();
 
-        if (listUsers.getUserList().size() == 0) {
-            Utility.getData(this);
-        }
+        database = RoomDB.getInstance(this);
 
-        changedActivities = false;
         Display display = ((WindowManager) this.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-        display_rotation = display.getRotation();
 
         setContentView(R.layout.activity_list_account);
 
@@ -94,27 +92,64 @@ public class ListAccount extends AppCompatActivity {
         signOutButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                changedActivities = true;
                 signOut();
             }
         });
 
         if (getIntent().getBooleanExtra("fromInfoPage", false)) {
-            UserListAdapter cardAdapter = new UserListAdapter(listUsers.getUserList(), () -> {
-                changedActivities = true;
-            });
+            UserListAdapter cardAdapter = new UserListAdapter(this);
             recyclerUsers.setAdapter(cardAdapter);
             recyclerUsers.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
-        } else {
+        } else if (database.userDao().size() <= 1){
             addHTTPtoUserList();
+        } else {
+            createAdapter();
         }
-        Utility.createNotificationChannel(this, NotificationManager.IMPORTANCE_HIGH);
-        notificationManagerCompat = NotificationManagerCompat.from(getApplicationContext());
+
+        Intent intent = new Intent(this, NotifService.class);
+        startService(intent);
     }
 
-    public void onResume() {
-        super.onResume();
-        Utility.removeNotification(notificationManagerCompat);
+    @Override
+    protected void onStart() {
+        super.onStart();
+        classHolder.addIntentInfo(this.getClass());
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item)
+    {
+
+        switch (item.getItemId())
+        {
+            case R.id.get_file:
+                requestStoragePermission();
+                return true;
+            case R.id.send_intent_button:
+                Intent intent = new Intent(getString(R.string.broadcast_click));
+                sendBroadcast(intent);
+                return true;
+            case R.id.image_show_button:
+                classHolder.addSinglePass();
+                Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
+                photoPickerIntent.setType("image/*");
+                startActivityForResult(photoPickerIntent, SELECT_PHOTO);
+                return true;
+            case R.id.map_locations_button:
+                Intent mapLocation = new Intent(this, MapsUser.class);
+                startActivity(mapLocation);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     private void signOut() {
@@ -128,7 +163,6 @@ public class ListAccount extends AppCompatActivity {
     }
 
     private void swapToMainActivity() {
-        changedActivities = true;
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
     }
@@ -150,10 +184,7 @@ public class ListAccount extends AppCompatActivity {
                     User[] users = gson.fromJson(response_string, User[].class);
                     runOnUiThread(() -> {
                         addtoList(users);
-                        UserListAdapter cardAdapter = new UserListAdapter(listUsers.getUserList(),
-                                () -> { changedActivities = true; });
-                        recyclerUsers.setAdapter(cardAdapter);
-                        recyclerUsers.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
+                        createAdapter();
                     });
                 } catch (IOException ignored) {
                     Log.d(TAG, ignored.toString());
@@ -163,40 +194,74 @@ public class ListAccount extends AppCompatActivity {
         });
     }
 
+    private void createAdapter() {
+        UserListAdapter cardAdapter = new UserListAdapter(getApplicationContext());
+        recyclerUsers.setAdapter(cardAdapter);
+        recyclerUsers.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
+    }
+
     private void addtoList(User[] users) {
         for (User user: users) {
-            LinkedHashMap<String, String> user_add = new LinkedHashMap<String, String>() {{
-                put("Image", robo_hash + random.nextInt());
-                put("Name", user.getName());
-                put("Email", user.getEmail());
-                put("Website", user.getWebsite());
-                put("Street", user.getAddress().getStreet());
-            }};
-            listUsers.addUser(user_add);
+            user.image = robo_hash + random.nextInt();
+            database.userDao().insert(user);
+        }
+    }
+
+    public void requestStoragePermission() {
+        boolean hasPermission = (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
+        ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                PERMISSION_STORAGE);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode)
+        {
+            case PERMISSION_STORAGE: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+                {
+                    String filename = "info.txt";
+                    File external_storage;
+                    if (this.getExternalMediaDirs().length > 0) {
+                        external_storage = this.getExternalMediaDirs()[0];
+                    } else {
+                        external_storage = getFilesDir();
+                    }
+
+                    File file = new File(external_storage, filename);
+                    FileOutputStream outputStream;
+                    Gson gson = new Gson();
+                    try {
+                        outputStream = new FileOutputStream(file);
+
+                        outputStream.write(gson.toJson(database.userDao().getAll()).getBytes(StandardCharsets.UTF_8));
+                        outputStream.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else
+                {
+                    Toast.makeText(this,
+                            "You have denied write permissions.", Toast.LENGTH_LONG).show();
+                }
+                break;
+            }
         }
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        Display display = ((WindowManager) this.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-        Utility.setData(this);
-        if (!changedActivities && display.getRotation() == display_rotation) {
-            Utility.createNotification(this, ListAccount.class, notificationManagerCompat);
-        } else {
-            changedActivities = false;
-            display_rotation = display.getRotation();
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+
+        if (requestCode == SELECT_PHOTO && resultCode == RESULT_OK && data != null) {
+            Uri pickedImage = data.getData();
+            Intent intent = new Intent(this, ImageViewer.class);
+            intent.putExtra("image", pickedImage.toString());
+            startActivity(intent);
         }
     }
-
-    @Override
-    public void onBackPressed() {
-        changedActivities = true;
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.putExtra("fromListAccount", true);
-        startActivity(intent);
-        finish();
-        super.onBackPressed();
-    }
-
 }
